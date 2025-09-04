@@ -5,34 +5,122 @@
 
 class ProgressManager {
   constructor() {
+    // Prevent multiple instances
+    if (window.progressManagerInstance) {
+      console.warn('ProgressManager already initialized');
+      return window.progressManagerInstance;
+    }
+    
     this.charts = {};
     this.currentPeriod = 7; // Default to 7 days
-    this.init();
+    this.isInitialized = false;
+    this.eventListenersBound = false;
+    
+    // Store instance globally to prevent duplicates
+    window.progressManagerInstance = this;
+    
+    // Only initialize if DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.init());
+    } else {
+      this.init();
+    }
   }
 
   /**
    * Initialize progress tracking functionality
    */
   init() {
-    this.setupEventListeners();
-    this.loadProgressData();
-    this.initializeCharts();
+    try {
+      // Prevent multiple initializations
+      if (this.isInitialized) {
+        console.warn('ProgressManager already initialized');
+        return;
+      }
+
+      // Check if we're on the progress page
+      if (!this.isProgressPage()) {
+        console.log('Not on progress page, skipping initialization');
+        return;
+      }
+
+      // Verify required dependencies exist
+      if (!this.checkDependencies()) {
+        console.error('Required dependencies not found');
+        return;
+      }
+
+      this.setupEventListeners();
+      this.loadProgressData();
+      this.initializeCharts();
+      
+      this.isInitialized = true;
+      console.log('ProgressManager initialized successfully');
+    } catch (error) {
+      console.error('Error initializing ProgressManager:', error);
+      this.showUserFriendlyError('Failed to initialize progress tracking. Please refresh the page.');
+    }
+  }
+
+  /**
+   * Check if we're on the progress page
+   * @returns {boolean} True if on progress page
+   */
+  isProgressPage() {
+    return window.location.pathname.includes('progress.html') || 
+           document.querySelector('#progress-page') !== null ||
+           document.querySelector('.progress-container') !== null;
+  }
+
+  /**
+   * Check if required dependencies are available
+   * @returns {boolean} True if all dependencies are available
+   */
+  checkDependencies() {
+    const required = [
+      'Chart',
+      'MealManager', 
+      'ProfileManager',
+      'ChartUtils',
+      'DateUtils'
+    ];
+    
+    const missing = required.filter(dep => !window[dep]);
+    if (missing.length > 0) {
+      console.error('Missing dependencies:', missing);
+      return false;
+    }
+    
+    return true;
   }
 
   /**
    * Setup event listeners
    */
   setupEventListeners() {
-    // Period selector buttons
-    const periodButtons = document.querySelectorAll('.period-btn');
-    periodButtons.forEach(button => {
-      button.addEventListener('click', (e) => {
-        this.changePeriod(parseInt(e.target.getAttribute('data-period')));
-      });
-    });
+    if (this.eventListenersBound) {
+      console.warn('Event listeners already bound');
+      return;
+    }
 
-    // Listen for data refresh events
-    document.addEventListener('dataRefresh', () => this.refreshData());
+    try {
+      // Period selector buttons
+      const periodButtons = document.querySelectorAll('.period-btn');
+      if (periodButtons.length > 0) {
+        periodButtons.forEach(button => {
+          button.addEventListener('click', (e) => {
+            this.changePeriod(parseInt(e.target.getAttribute('data-period')));
+          });
+        });
+      }
+
+      // Listen for data refresh events
+      document.addEventListener('dataRefresh', () => this.refreshData());
+      
+      this.eventListenersBound = true;
+    } catch (error) {
+      console.error('Error setting up event listeners:', error);
+    }
   }
 
   /**
@@ -40,102 +128,121 @@ class ProgressManager {
    * @param {number} days - Number of days to track
    */
   changePeriod(days) {
-    this.currentPeriod = days;
-    
-    // Update active button
-    const periodButtons = document.querySelectorAll('.period-btn');
-    periodButtons.forEach(button => {
-      if (parseInt(button.getAttribute('data-period')) === days) {
-        button.classList.add('active');
-      } else {
-        button.classList.remove('active');
-      }
-    });
+    try {
+      this.currentPeriod = days;
+      
+      // Update active button
+      const periodButtons = document.querySelectorAll('.period-btn');
+      periodButtons.forEach(button => {
+        if (parseInt(button.getAttribute('data-period')) === days) {
+          button.classList.add('active');
+        } else {
+          button.classList.remove('active');
+        }
+      });
 
-    // Refresh data and charts
-    this.refreshData();
+      // Refresh data and charts
+      this.refreshData();
+    } catch (error) {
+      console.error('Error changing period:', error);
+    }
   }
 
   /**
    * Load and display progress data
    */
   loadProgressData() {
-    this.updateProgressStats();
-    this.updateGoalProgress();
-    this.generateInsights();
+    try {
+      this.updateProgressStats();
+      this.updateGoalProgress();
+      this.generateInsights();
+    } catch (error) {
+      console.error('Error loading progress data:', error);
+    }
   }
 
   /**
    * Update progress statistics
    */
   updateProgressStats() {
-    const meals = this.getMealsForPeriod();
-    const totalDays = this.currentPeriod;
-    const daysWithMeals = this.getUniqueDaysWithMeals(meals);
-    const avgDays = daysWithMeals.length || 1;
+    try {
+      const meals = this.getMealsForPeriod();
+      const totalDays = this.currentPeriod;
+      const daysWithMeals = this.getUniqueDaysWithMeals(meals);
+      const avgDays = daysWithMeals.length || 1;
 
-    const totalNutrition = MealManager.calculateTotalNutrition(meals);
-    
-    // Calculate averages
-    const avgNutrition = {
-      calories: Math.round(totalNutrition.calories / avgDays),
-      protein: Math.round((totalNutrition.protein / avgDays) * 10) / 10,
-      carbs: Math.round((totalNutrition.carbs / avgDays) * 10) / 10,
-      fats: Math.round((totalNutrition.fats / avgDays) * 10) / 10
-    };
+      const totalNutrition = MealManager.calculateTotalNutrition(meals);
+      
+      // Calculate averages
+      const avgNutrition = {
+        calories: Math.round(totalNutrition.calories / avgDays),
+        protein: Math.round((totalNutrition.protein / avgDays) * 10) / 10,
+        carbs: Math.round((totalNutrition.carbs / avgDays) * 10) / 10,
+        fats: Math.round((totalNutrition.fats / avgDays) * 10) / 10
+      };
 
-    // Update display
-    this.updateElement('avg-calories', avgNutrition.calories);
-    this.updateElement('avg-protein', `${avgNutrition.protein}g`);
-    this.updateElement('avg-carbs', `${avgNutrition.carbs}g`);
-    this.updateElement('avg-fats', `${avgNutrition.fats}g`);
+      // Update display
+      this.updateElement('avg-calories', avgNutrition.calories);
+      this.updateElement('avg-protein', `${avgNutrition.protein}g`);
+      this.updateElement('avg-carbs', `${avgNutrition.carbs}g`);
+      this.updateElement('avg-fats', `${avgNutrition.fats}g`);
+    } catch (error) {
+      console.error('Error updating progress stats:', error);
+    }
   }
 
   /**
    * Update goal progress bars
    */
   updateGoalProgress() {
-    const goals = ProfileManager.getGoals();
-    const meals = this.getMealsForPeriod();
-    const daysWithMeals = this.getUniqueDaysWithMeals(meals);
-    const avgDays = daysWithMeals.length || 1;
-    
-    const totalNutrition = MealManager.calculateTotalNutrition(meals);
-    const avgNutrition = {
-      calories: totalNutrition.calories / avgDays,
-      protein: totalNutrition.protein / avgDays,
-      carbs: totalNutrition.carbs / avgDays,
-      fats: totalNutrition.fats / avgDays
-    };
-
-    const progressContainer = document.getElementById('goal-progress');
-    if (!progressContainer) return;
-
-    const progressBars = [
-      { label: 'Calories', current: avgNutrition.calories, goal: goals.calorieGoal, unit: '' },
-      { label: 'Protein', current: avgNutrition.protein, goal: goals.proteinGoal, unit: 'g' },
-      { label: 'Carbs', current: avgNutrition.carbs, goal: goals.carbsGoal, unit: 'g' },
-      { label: 'Fats', current: avgNutrition.fats, goal: goals.fatsGoal, unit: 'g' }
-    ];
-
-    progressContainer.innerHTML = progressBars.map(bar => {
-      const percentage = bar.goal > 0 ? Math.min((bar.current / bar.goal) * 100, 100) : 0;
-      const isOnTrack = percentage >= 80 && percentage <= 120;
+    try {
+      const goals = ProfileManager.getGoals();
+      const meals = this.getMealsForPeriod();
+      const daysWithMeals = this.getUniqueDaysWithMeals(meals);
+      const avgDays = daysWithMeals.length || 1;
       
-      return `
-        <div class="progress-bar-container">
-          <div class="progress-bar-label">
-            <span>${bar.label}</span>
-            <span>${bar.current.toFixed(1)}${bar.unit} / ${bar.goal}${bar.unit}</span>
+      const totalNutrition = MealManager.calculateTotalNutrition(meals);
+      const avgNutrition = {
+        calories: totalNutrition.calories / avgDays,
+        protein: totalNutrition.protein / avgDays,
+        carbs: totalNutrition.carbs / avgDays,
+        fats: totalNutrition.fats / avgDays
+      };
+
+      const progressContainer = document.getElementById('goal-progress');
+      if (!progressContainer) {
+        console.warn('Goal progress container not found');
+        return;
+      }
+
+      const progressBars = [
+        { label: 'Calories', current: avgNutrition.calories, goal: goals.calorieGoal, unit: '' },
+        { label: 'Protein', current: avgNutrition.protein, goal: goals.proteinGoal, unit: 'g' },
+        { label: 'Carbs', current: avgNutrition.carbs, goal: goals.carbsGoal, unit: 'g' },
+        { label: 'Fats', current: avgNutrition.fats, goal: goals.fatsGoal, unit: 'g' }
+      ];
+
+      progressContainer.innerHTML = progressBars.map(bar => {
+        const percentage = bar.goal > 0 ? Math.min((bar.current / bar.goal) * 100, 100) : 0;
+        const isOnTrack = percentage >= 80 && percentage <= 120;
+        
+        return `
+          <div class="progress-bar-container">
+            <div class="progress-bar-label">
+              <span>${bar.label}</span>
+              <span>${bar.current.toFixed(1)}${bar.unit} / ${bar.goal}${bar.unit}</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-bar-fill ${isOnTrack ? 'on-track' : ''}" 
+                   style="width: ${percentage}%"></div>
+            </div>
+            <div class="progress-percentage">${percentage.toFixed(1)}%</div>
           </div>
-          <div class="progress-bar">
-            <div class="progress-bar-fill ${isOnTrack ? 'on-track' : ''}" 
-                 style="width: ${percentage}%"></div>
-          </div>
-          <div class="progress-percentage">${percentage.toFixed(1)}%</div>
-        </div>
-      `;
-    }).join('');
+        `;
+      }).join('');
+    } catch (error) {
+      console.error('Error updating goal progress:', error);
+    }
   }
 
   /**
@@ -143,15 +250,26 @@ class ProgressManager {
    * @returns {Array<Object>} Meals within the period
    */
   getMealsForPeriod() {
-    const allMeals = MealManager.getAllMeals();
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(endDate.getDate() - this.currentPeriod + 1);
+    try {
+      const allMeals = MealManager.getAllMeals();
+      if (!Array.isArray(allMeals)) {
+        console.warn('No meals data available');
+        return [];
+      }
+      
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - this.currentPeriod + 1);
 
-    return allMeals.filter(meal => {
-      const mealDate = new Date(meal.date);
-      return mealDate >= startDate && mealDate <= endDate;
-    });
+      return allMeals.filter(meal => {
+        if (!meal || !meal.date) return false;
+        const mealDate = new Date(meal.date);
+        return mealDate >= startDate && mealDate <= endDate;
+      });
+    } catch (error) {
+      console.error('Error getting meals for period:', error);
+      return [];
+    }
   }
 
   /**
@@ -160,17 +278,30 @@ class ProgressManager {
    * @returns {Array<string>} Array of unique dates
    */
   getUniqueDaysWithMeals(meals) {
-    const uniqueDates = [...new Set(meals.map(meal => meal.date))];
-    return uniqueDates.sort();
+    try {
+      if (!Array.isArray(meals)) return [];
+      const uniqueDates = [...new Set(meals.map(meal => meal.date).filter(Boolean))];
+      return uniqueDates.sort();
+    } catch (error) {
+      console.error('Error getting unique days:', error);
+      return [];
+    }
   }
 
   /**
    * Initialize all charts
    */
   initializeCharts() {
-    this.initializeCaloriesTrendChart();
-    this.initializeMacrosBreakdownChart();
-    this.initializeWeeklyComparisonChart();
+    try {
+      // Destroy any existing charts first
+      this.destroyCharts();
+      
+      this.initializeCaloriesTrendChart();
+      this.initializeMacrosBreakdownChart();
+      this.initializeWeeklyComparisonChart();
+    } catch (error) {
+      console.error('Error initializing charts:', error);
+    }
   }
 
   /**
@@ -178,89 +309,96 @@ class ProgressManager {
    */
   initializeCaloriesTrendChart() {
     const ctx = document.getElementById('calories-trend-chart');
-    if (!ctx) return;
-
-    const colors = ChartUtils.getChartColors();
-    const meals = this.getMealsForPeriod();
-    const daysWithMeals = this.getUniqueDaysWithMeals(meals);
-    
-    // Prepare data for last N days
-    const labels = [];
-    const caloriesData = [];
-    const goalData = [];
-    const goals = ProfileManager.getGoals();
-
-    for (let i = this.currentPeriod - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dateString = DateUtils.formatDate(date);
-      
-      labels.push(DateUtils.getShortDayName(dateString));
-      
-      const dayMeals = meals.filter(meal => meal.date === dateString);
-      const dayCalories = MealManager.calculateTotalNutrition(dayMeals).calories;
-      
-      caloriesData.push(dayCalories);
-      goalData.push(goals.calorieGoal);
+    if (!ctx) {
+      console.warn('Calories trend chart canvas not found');
+      return;
     }
 
-    this.charts.caloriesTrend = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: 'Daily Calories',
-            data: caloriesData,
-            borderColor: colors.primary,
-            backgroundColor: colors.primary + '20',
-            borderWidth: 3,
-            fill: true,
-            tension: 0.4,
-            pointBackgroundColor: colors.primary,
-            pointBorderColor: colors.background,
-            pointBorderWidth: 2,
-            pointRadius: 5
+    try {
+      const colors = ChartUtils.getChartColors();
+      const meals = this.getMealsForPeriod();
+      const daysWithMeals = this.getUniqueDaysWithMeals(meals);
+      
+      // Prepare data for last N days
+      const labels = [];
+      const caloriesData = [];
+      const goalData = [];
+      const goals = ProfileManager.getGoals();
+
+      for (let i = this.currentPeriod - 1; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateString = DateUtils.formatDate(date);
+        
+        labels.push(DateUtils.getShortDayName(dateString));
+        
+        const dayMeals = meals.filter(meal => meal.date === dateString);
+        const dayCalories = MealManager.calculateTotalNutrition(dayMeals).calories;
+        
+        caloriesData.push(dayCalories);
+        goalData.push(goals.calorieGoal);
+      }
+
+      this.charts.caloriesTrend = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Daily Calories',
+              data: caloriesData,
+              borderColor: colors.primary,
+              backgroundColor: colors.primary + '20',
+              borderWidth: 3,
+              fill: true,
+              tension: 0.4,
+              pointBackgroundColor: colors.primary,
+              pointBorderColor: colors.background,
+              pointBorderWidth: 2,
+              pointRadius: 5
+            },
+            {
+              label: 'Goal',
+              data: goalData,
+              borderColor: colors.error,
+              borderWidth: 2,
+              borderDash: [5, 5],
+              fill: false,
+              pointRadius: 0,
+              pointHoverRadius: 0
+            }
+          ]
+        },
+        options: {
+          ...ChartUtils.getDefaultOptions(),
+          scales: {
+            ...ChartUtils.getDefaultOptions().scales,
+            y: {
+              ...ChartUtils.getDefaultOptions().scales.y,
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Calories',
+                color: colors.text
+              }
+            }
           },
-          {
-            label: 'Goal',
-            data: goalData,
-            borderColor: colors.error,
-            borderWidth: 2,
-            borderDash: [5, 5],
-            fill: false,
-            pointRadius: 0,
-            pointHoverRadius: 0
-          }
-        ]
-      },
-      options: {
-        ...ChartUtils.getDefaultOptions(),
-        scales: {
-          ...ChartUtils.getDefaultOptions().scales,
-          y: {
-            ...ChartUtils.getDefaultOptions().scales.y,
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Calories',
-              color: colors.text
+          plugins: {
+            ...ChartUtils.getDefaultOptions().plugins,
+            tooltip: {
+              backgroundColor: colors.background,
+              titleColor: colors.text,
+              bodyColor: colors.text,
+              borderColor: colors.primary,
+              borderWidth: 1,
+              cornerRadius: 8
             }
           }
-        },
-        plugins: {
-          ...ChartUtils.getDefaultOptions().plugins,
-          tooltip: {
-            backgroundColor: colors.background,
-            titleColor: colors.text,
-            bodyColor: colors.text,
-            borderColor: colors.primary,
-            borderWidth: 1,
-            cornerRadius: 8
-          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Error initializing calories trend chart:', error);
+    }
   }
 
   /**
@@ -268,61 +406,68 @@ class ProgressManager {
    */
   initializeMacrosBreakdownChart() {
     const ctx = document.getElementById('macros-breakdown-chart');
-    if (!ctx) return;
+    if (!ctx) {
+      console.warn('Macros breakdown chart canvas not found');
+      return;
+    }
 
-    const colors = ChartUtils.getChartColors();
-    const meals = this.getMealsForPeriod();
-    const totalNutrition = MealManager.calculateTotalNutrition(meals);
+    try {
+      const colors = ChartUtils.getChartColors();
+      const meals = this.getMealsForPeriod();
+      const totalNutrition = MealManager.calculateTotalNutrition(meals);
 
-    // Calculate calories from each macro
-    const proteinCalories = totalNutrition.protein * 4;
-    const carbsCalories = totalNutrition.carbs * 4;
-    const fatsCalories = totalNutrition.fats * 9;
+      // Calculate calories from each macro
+      const proteinCalories = totalNutrition.protein * 4;
+      const carbsCalories = totalNutrition.carbs * 4;
+      const fatsCalories = totalNutrition.fats * 9;
 
-    this.charts.macrosBreakdown = new Chart(ctx, {
-      type: 'pie',
-      data: {
-        labels: ['Protein', 'Carbohydrates', 'Fats'],
-        datasets: [{
-          data: [proteinCalories, carbsCalories, fatsCalories],
-          backgroundColor: [
-            colors.primary,
-            colors.secondary,
-            colors.warning
-          ],
-          borderColor: colors.background,
-          borderWidth: 2,
-          hoverOffset: 15
-        }]
-      },
-      options: {
-        ...ChartUtils.getDefaultOptions(),
-        plugins: {
-          ...ChartUtils.getDefaultOptions().plugins,
-          legend: {
-            ...ChartUtils.getDefaultOptions().plugins.legend,
-            position: 'bottom'
-          },
-          tooltip: {
-            backgroundColor: colors.background,
-            titleColor: colors.text,
-            bodyColor: colors.text,
-            borderColor: colors.primary,
-            borderWidth: 1,
-            cornerRadius: 8,
-            callbacks: {
-              label: function(context) {
-                const label = context.label;
-                const value = context.parsed;
-                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                return `${label}: ${value} cal (${percentage}%)`;
+      this.charts.macrosBreakdown = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['Protein', 'Carbohydrates', 'Fats'],
+          datasets: [{
+            data: [proteinCalories, carbsCalories, fatsCalories],
+            backgroundColor: [
+              colors.primary,
+              colors.secondary,
+              colors.warning
+            ],
+            borderColor: colors.background,
+            borderWidth: 2,
+            hoverOffset: 15
+          }]
+        },
+        options: {
+          ...ChartUtils.getDefaultOptions(),
+          plugins: {
+            ...ChartUtils.getDefaultOptions().plugins,
+            legend: {
+              ...ChartUtils.getDefaultOptions().plugins.legend,
+              position: 'bottom'
+            },
+            tooltip: {
+              backgroundColor: colors.background,
+              titleColor: colors.text,
+              bodyColor: colors.text,
+              borderColor: colors.primary,
+              borderWidth: 1,
+              cornerRadius: 8,
+              callbacks: {
+                label: function(context) {
+                  const label = context.label;
+                  const value = context.parsed;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                  return `${label}: ${value} cal (${percentage}%)`;
+                }
               }
             }
           }
         }
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Error initializing macros breakdown chart:', error);
+    }
   }
 
   /**
@@ -330,70 +475,77 @@ class ProgressManager {
    */
   initializeWeeklyComparisonChart() {
     const ctx = document.getElementById('weekly-comparison-chart');
-    if (!ctx) return;
+    if (!ctx) {
+      console.warn('Weekly comparison chart canvas not found');
+      return;
+    }
 
-    const colors = ChartUtils.getChartColors();
-    const weeksData = this.getWeeklyComparisonData();
+    try {
+      const colors = ChartUtils.getChartColors();
+      const weeksData = this.getWeeklyComparisonData();
 
-    this.charts.weeklyComparison = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: weeksData.labels,
-        datasets: [
-          {
-            label: 'Calories',
-            data: weeksData.calories,
-            backgroundColor: colors.primary + '80',
-            borderColor: colors.primary,
-            borderWidth: 2,
-            borderRadius: 4
-          },
-          {
-            label: 'Protein (×10)',
-            data: weeksData.protein.map(p => p * 10), // Scale for visibility
-            backgroundColor: colors.secondary + '80',
-            borderColor: colors.secondary,
-            borderWidth: 2,
-            borderRadius: 4
-          }
-        ]
-      },
-      options: {
-        ...ChartUtils.getDefaultOptions(),
-        scales: {
-          ...ChartUtils.getDefaultOptions().scales,
-          y: {
-            ...ChartUtils.getDefaultOptions().scales.y,
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Average Daily Values',
-              color: colors.text
+      this.charts.weeklyComparison = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: weeksData.labels,
+          datasets: [
+            {
+              label: 'Calories',
+              data: weeksData.calories,
+              backgroundColor: colors.primary + '80',
+              borderColor: colors.primary,
+              borderWidth: 2,
+              borderRadius: 4
+            },
+            {
+              label: 'Protein (×10)',
+              data: weeksData.protein.map(p => p * 10), // Scale for visibility
+              backgroundColor: colors.secondary + '80',
+              borderColor: colors.secondary,
+              borderWidth: 2,
+              borderRadius: 4
             }
-          }
+          ]
         },
-        plugins: {
-          ...ChartUtils.getDefaultOptions().plugins,
-          tooltip: {
-            backgroundColor: colors.background,
-            titleColor: colors.text,
-            bodyColor: colors.text,
-            borderColor: colors.primary,
-            borderWidth: 1,
-            cornerRadius: 8,
-            callbacks: {
-              label: function(context) {
-                if (context.datasetIndex === 1) {
-                  // Protein dataset - divide by 10 to show actual value
-                  return `Protein: ${(context.parsed.y / 10).toFixed(1)}g`;
+        options: {
+          ...ChartUtils.getDefaultOptions(),
+          scales: {
+            ...ChartUtils.getDefaultOptions().scales,
+            y: {
+              ...ChartUtils.getDefaultOptions().scales.y,
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Average Daily Values',
+                color: colors.text
+              }
+            }
+          },
+          plugins: {
+            ...ChartUtils.getDefaultOptions().plugins,
+            tooltip: {
+              backgroundColor: colors.background,
+              titleColor: colors.text,
+              bodyColor: colors.text,
+              borderColor: colors.primary,
+              borderWidth: 1,
+              cornerRadius: 8,
+              callbacks: {
+                label: function(context) {
+                  if (context.datasetIndex === 1) {
+                    // Protein dataset - divide by 10 to show actual value
+                    return `Protein: ${(context.parsed.y / 10).toFixed(1)}g`;
+                  }
+                  return `${context.dataset.label}: ${context.parsed.y}`;
                 }
-                return `${context.dataset.label}: ${context.parsed.y}`;
               }
             }
           }
         }
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Error initializing weekly comparison chart:', error);
+    }
   }
 
   /**
@@ -401,32 +553,37 @@ class ProgressManager {
    * @returns {Object} Weekly comparison data
    */
   getWeeklyComparisonData() {
-    const weeks = [];
-    const labels = [];
-    const calories = [];
-    const protein = [];
+    try {
+      const weeks = [];
+      const labels = [];
+      const calories = [];
+      const protein = [];
 
-    // Get data for last 4 weeks
-    for (let weekOffset = 3; weekOffset >= 0; weekOffset--) {
-      const weekStart = new Date();
-      weekStart.setDate(weekStart.getDate() - (weekOffset * 7) - weekStart.getDay() + 1);
-      
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
+      // Get data for last 4 weeks
+      for (let weekOffset = 3; weekOffset >= 0; weekOffset--) {
+        const weekStart = new Date();
+        weekStart.setDate(weekStart.getDate() - (weekOffset * 7) - weekStart.getDay() + 1);
+        
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
 
-      const weekMeals = this.getMealsForDateRange(weekStart, weekEnd);
-      const weekNutrition = MealManager.calculateTotalNutrition(weekMeals);
-      
-      // Calculate daily averages
-      const daysWithMeals = this.getUniqueDaysWithMeals(weekMeals);
-      const avgDays = daysWithMeals.length || 1;
-      
-      labels.push(`Week ${4 - weekOffset}`);
-      calories.push(Math.round(weekNutrition.calories / avgDays));
-      protein.push(Math.round((weekNutrition.protein / avgDays) * 10) / 10);
+        const weekMeals = this.getMealsForDateRange(weekStart, weekEnd);
+        const weekNutrition = MealManager.calculateTotalNutrition(weekMeals);
+        
+        // Calculate daily averages
+        const daysWithMeals = this.getUniqueDaysWithMeals(weekMeals);
+        const avgDays = daysWithMeals.length || 1;
+        
+        labels.push(`Week ${4 - weekOffset}`);
+        calories.push(Math.round(weekNutrition.calories / avgDays));
+        protein.push(Math.round((weekNutrition.protein / avgDays) * 10) / 10);
+      }
+
+      return { labels, calories, protein };
+    } catch (error) {
+      console.error('Error getting weekly comparison data:', error);
+      return { labels: [], calories: [], protein: [] };
     }
-
-    return { labels, calories, protein };
   }
 
   /**
@@ -436,11 +593,19 @@ class ProgressManager {
    * @returns {Array<Object>} Meals in date range
    */
   getMealsForDateRange(startDate, endDate) {
-    const allMeals = MealManager.getAllMeals();
-    return allMeals.filter(meal => {
-      const mealDate = new Date(meal.date);
-      return mealDate >= startDate && mealDate <= endDate;
-    });
+    try {
+      const allMeals = MealManager.getAllMeals();
+      if (!Array.isArray(allMeals)) return [];
+      
+      return allMeals.filter(meal => {
+        if (!meal || !meal.date) return false;
+        const mealDate = new Date(meal.date);
+        return mealDate >= startDate && mealDate <= endDate;
+      });
+    } catch (error) {
+      console.error('Error getting meals for date range:', error);
+      return [];
+    }
   }
 
   /**
@@ -449,14 +614,18 @@ class ProgressManager {
    * @param {string|number} value - New value
    */
   updateElement(elementId, value) {
-    const element = document.getElementById(elementId);
-    if (element) {
-      element.style.transform = 'scale(1.05)';
-      element.textContent = value;
-      
-      setTimeout(() => {
-        element.style.transform = 'scale(1)';
-      }, 200);
+    try {
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.style.transform = 'scale(1.05)';
+        element.textContent = value;
+        
+        setTimeout(() => {
+          element.style.transform = 'scale(1)';
+        }, 200);
+      }
+    } catch (error) {
+      console.error('Error updating element:', error);
     }
   }
 
@@ -464,27 +633,34 @@ class ProgressManager {
    * Generate and display insights
    */
   generateInsights() {
-    const insights = this.analyzeNutritionData();
-    const insightsContainer = document.getElementById('insights-grid');
-    
-    if (!insightsContainer) return;
+    try {
+      const insights = this.analyzeNutritionData();
+      const insightsContainer = document.getElementById('insights-grid');
+      
+      if (!insightsContainer) {
+        console.warn('Insights container not found');
+        return;
+      }
 
-    if (insights.length === 0) {
-      insightsContainer.innerHTML = `
-        <div class="insight-card">
-          <h4>📊 Getting Started</h4>
-          <p>Add more meals to your planner to see personalized insights and recommendations!</p>
+      if (insights.length === 0) {
+        insightsContainer.innerHTML = `
+          <div class="insight-card">
+            <h4>📊 Getting Started</h4>
+            <p>Add more meals to your planner to see personalized insights and recommendations!</p>
+          </div>
+        `;
+        return;
+      }
+
+      insightsContainer.innerHTML = insights.map(insight => `
+        <div class="insight-card ${insight.type}">
+          <h4>${insight.icon} ${insight.title}</h4>
+          <p>${insight.message}</p>
         </div>
-      `;
-      return;
+      `).join('');
+    } catch (error) {
+      console.error('Error generating insights:', error);
     }
-
-    insightsContainer.innerHTML = insights.map(insight => `
-      <div class="insight-card ${insight.type}">
-        <h4>${insight.icon} ${insight.title}</h4>
-        <p>${insight.message}</p>
-      </div>
-    `).join('');
   }
 
   /**
@@ -492,155 +668,178 @@ class ProgressManager {
    * @returns {Array<Object>} Array of insight objects
    */
   analyzeNutritionData() {
-    const meals = this.getMealsForPeriod();
-    const goals = ProfileManager.getGoals();
-    const insights = [];
+    try {
+      const meals = this.getMealsForPeriod();
+      const goals = ProfileManager.getGoals();
+      const insights = [];
 
-    if (meals.length === 0) return insights;
+      if (meals.length === 0) return insights;
 
-    const totalNutrition = MealManager.calculateTotalNutrition(meals);
-    const daysWithMeals = this.getUniqueDaysWithMeals(meals);
-    const avgDays = daysWithMeals.length || 1;
-    
-    const avgNutrition = {
-      calories: totalNutrition.calories / avgDays,
-      protein: totalNutrition.protein / avgDays,
-      carbs: totalNutrition.carbs / avgDays,
-      fats: totalNutrition.fats / avgDays
-    };
+      const totalNutrition = MealManager.calculateTotalNutrition(meals);
+      const daysWithMeals = this.getUniqueDaysWithMeals(meals);
+      const avgDays = daysWithMeals.length || 1;
+      
+      const avgNutrition = {
+        calories: totalNutrition.calories / avgDays,
+        protein: totalNutrition.protein / avgDays,
+        carbs: totalNutrition.carbs / avgDays,
+        fats: totalNutrition.fats / avgDays
+      };
 
-    // Calorie analysis
-    const calorieRatio = goals.calorieGoal > 0 ? avgNutrition.calories / goals.calorieGoal : 0;
-    if (calorieRatio < 0.8) {
-      insights.push({
-        type: 'warning',
-        icon: '⚠️',
-        title: 'Low Calorie Intake',
-        message: `You're averaging ${Math.round(avgNutrition.calories)} calories per day, which is ${Math.round((1 - calorieRatio) * 100)}% below your goal. Consider adding more calorie-dense foods.`
-      });
-    } else if (calorieRatio > 1.2) {
-      insights.push({
-        type: 'warning',
-        icon: '📈',
-        title: 'High Calorie Intake',
-        message: `You're averaging ${Math.round(avgNutrition.calories)} calories per day, which is ${Math.round((calorieRatio - 1) * 100)}% above your goal. Consider portion control or lower-calorie alternatives.`
-      });
-    } else {
-      insights.push({
-        type: 'success',
-        icon: '✅',
-        title: 'Great Calorie Balance',
-        message: `You're maintaining excellent calorie balance, averaging ${Math.round(avgNutrition.calories)} calories per day!`
-      });
-    }
-
-    // Protein analysis
-    const proteinRatio = goals.proteinGoal > 0 ? avgNutrition.protein / goals.proteinGoal : 0;
-    if (proteinRatio < 0.8) {
-      insights.push({
-        type: 'info',
-        icon: '🥩',
-        title: 'Increase Protein Intake',
-        message: `Consider adding more protein-rich foods like lean meats, fish, eggs, or legumes to reach your daily goal of ${goals.proteinGoal}g.`
-      });
-    } else if (proteinRatio > 1.5) {
-      insights.push({
-        type: 'info',
-        icon: '⚖️',
-        title: 'High Protein Intake',
-        message: `You're consuming ${avgNutrition.protein.toFixed(1)}g protein daily. Ensure you're balancing with adequate carbs and fats.`
-      });
-    }
-
-    // Meal frequency analysis
-    const avgMealsPerDay = meals.length / avgDays;
-    if (avgMealsPerDay < 3) {
-      insights.push({
-        type: 'info',
-        icon: '🍽️',
-        title: 'Meal Frequency',
-        message: `You're averaging ${avgMealsPerDay.toFixed(1)} meals per day. Consider adding healthy snacks to maintain energy levels throughout the day.`
-      });
-    }
-
-    // Macro balance analysis
-    const totalMacroCalories = (avgNutrition.protein * 4) + (avgNutrition.carbs * 4) + (avgNutrition.fats * 9);
-    if (totalMacroCalories > 0) {
-      const proteinPercent = (avgNutrition.protein * 4) / totalMacroCalories * 100;
-      const carbsPercent = (avgNutrition.carbs * 4) / totalMacroCalories * 100;
-      const fatsPercent = (avgNutrition.fats * 9) / totalMacroCalories * 100;
-
-      if (proteinPercent > 35) {
+      // Calorie analysis
+      const calorieRatio = goals.calorieGoal > 0 ? avgNutrition.calories / goals.calorieGoal : 0;
+      if (calorieRatio < 0.8) {
         insights.push({
-          type: 'info',
-          icon: '🔄',
-          title: 'High Protein Ratio',
-          message: `Protein makes up ${proteinPercent.toFixed(1)}% of your calories. Consider balancing with more carbohydrates for energy.`
+          type: 'warning',
+          icon: '⚠️',
+          title: 'Low Calorie Intake',
+          message: `You're averaging ${Math.round(avgNutrition.calories)} calories per day, which is ${Math.round((1 - calorieRatio) * 100)}% below your goal. Consider adding more calorie-dense foods.`
+        });
+      } else if (calorieRatio > 1.2) {
+        insights.push({
+          type: 'warning',
+          icon: '📈',
+          title: 'High Calorie Intake',
+          message: `You're averaging ${Math.round(avgNutrition.calories)} calories per day, which is ${Math.round((calorieRatio - 1) * 100)}% above your goal. Consider portion control or lower-calorie alternatives.`
+        });
+      } else {
+        insights.push({
+          type: 'success',
+          icon: '✅',
+          title: 'Great Calorie Balance',
+          message: `You're maintaining excellent calorie balance, averaging ${Math.round(avgNutrition.calories)} calories per day!`
         });
       }
 
-      if (carbsPercent < 30) {
+      // Protein analysis
+      const proteinRatio = goals.proteinGoal > 0 ? avgNutrition.protein / goals.proteinGoal : 0;
+      if (proteinRatio < 0.8) {
         insights.push({
           type: 'info',
-          icon: '⚡',
-          title: 'Low Carbohydrate Intake',
-          message: `Carbs make up only ${carbsPercent.toFixed(1)}% of your calories. Consider adding more complex carbs for sustained energy.`
+          icon: '🥩',
+          title: 'Increase Protein Intake',
+          message: `Consider adding more protein-rich foods like lean meats, fish, eggs, or legumes to reach your daily goal of ${goals.proteinGoal}g.`
+        });
+      } else if (proteinRatio > 1.5) {
+        insights.push({
+          type: 'info',
+          icon: '⚖️',
+          title: 'High Protein Intake',
+          message: `You're consuming ${avgNutrition.protein.toFixed(1)}g protein daily. Ensure you're balancing with adequate carbs and fats.`
         });
       }
+
+      // Meal frequency analysis
+      const avgMealsPerDay = meals.length / avgDays;
+      if (avgMealsPerDay < 3) {
+        insights.push({
+          type: 'info',
+          icon: '🍽️',
+          title: 'Meal Frequency',
+          message: `You're averaging ${avgMealsPerDay.toFixed(1)} meals per day. Consider adding healthy snacks to maintain energy levels throughout the day.`
+        });
+      }
+
+      // Macro balance analysis
+      const totalMacroCalories = (avgNutrition.protein * 4) + (avgNutrition.carbs * 4) + (avgNutrition.fats * 9);
+      if (totalMacroCalories > 0) {
+        const proteinPercent = (avgNutrition.protein * 4) / totalMacroCalories * 100;
+        const carbsPercent = (avgNutrition.carbs * 4) / totalMacroCalories * 100;
+        const fatsPercent = (avgNutrition.fats * 9) / totalMacroCalories * 100;
+
+        if (proteinPercent > 35) {
+          insights.push({
+            type: 'info',
+            icon: '🔄',
+            title: 'High Protein Ratio',
+            message: `Protein makes up ${proteinPercent.toFixed(1)}% of your calories. Consider balancing with more carbohydrates for energy.`
+          });
+        }
+
+        if (carbsPercent < 30) {
+          insights.push({
+            type: 'info',
+            icon: '⚡',
+            title: 'Low Carbohydrate Intake',
+            message: `Carbs make up only ${carbsPercent.toFixed(1)}% of your calories. Consider adding more complex carbs for sustained energy.`
+          });
+        }
+      }
+
+      // Consistency analysis
+      const consistentDays = daysWithMeals.length;
+      const totalDays = this.currentPeriod;
+      const consistencyRatio = consistentDays / totalDays;
+
+      if (consistencyRatio >= 0.8) {
+        insights.push({
+          type: 'success',
+          icon: '🎯',
+          title: 'Excellent Consistency',
+          message: `You've logged meals for ${consistentDays} out of ${totalDays} days. Keep up the great tracking!`
+        });
+      } else if (consistencyRatio >= 0.5) {
+        insights.push({
+          type: 'info',
+          icon: '📝',
+          title: 'Good Progress',
+          message: `You've logged meals for ${consistentDays} out of ${totalDays} days. Try to track meals more consistently for better insights.`
+        });
+      } else {
+        insights.push({
+          type: 'warning',
+          icon: '📊',
+          title: 'Improve Tracking',
+          message: `You've only logged meals for ${consistentDays} out of ${totalDays} days. More consistent tracking will provide better insights.`
+        });
+      }
+
+      return insights;
+    } catch (error) {
+      console.error('Error analyzing nutrition data:', error);
+      return [];
     }
+  }
 
-    // Consistency analysis
-    const consistentDays = daysWithMeals.length;
-    const totalDays = this.currentPeriod;
-    const consistencyRatio = consistentDays / totalDays;
-
-    if (consistencyRatio >= 0.8) {
-      insights.push({
-        type: 'success',
-        icon: '🎯',
-        title: 'Excellent Consistency',
-        message: `You've logged meals for ${consistentDays} out of ${totalDays} days. Keep up the great tracking!`
+  /**
+   * Destroy existing charts
+   */
+  destroyCharts() {
+    try {
+      Object.values(this.charts).forEach(chart => {
+        if (chart && typeof chart.destroy === 'function') {
+          chart.destroy();
+        }
       });
-    } else if (consistencyRatio >= 0.5) {
-      insights.push({
-        type: 'info',
-        icon: '📝',
-        title: 'Good Progress',
-        message: `You've logged meals for ${consistentDays} out of ${totalDays} days. Try to track meals more consistently for better insights.`
-      });
-    } else {
-      insights.push({
-        type: 'warning',
-        icon: '📊',
-        title: 'Improve Tracking',
-        message: `You've only logged meals for ${consistentDays} out of ${totalDays} days. More consistent tracking will provide better insights.`
-      });
+      this.charts = {};
+    } catch (error) {
+      console.error('Error destroying charts:', error);
     }
-
-    return insights;
   }
 
   /**
    * Update charts with new data
    */
   updateChartsData() {
-    // Destroy existing charts and recreate with new data
-    Object.values(this.charts).forEach(chart => {
-      if (chart && typeof chart.destroy === 'function') {
-        chart.destroy();
-      }
-    });
-    
-    this.charts = {};
-    this.initializeCharts();
+    try {
+      // Destroy existing charts and recreate with new data
+      this.destroyCharts();
+      this.initializeCharts();
+    } catch (error) {
+      console.error('Error updating charts data:', error);
+    }
   }
 
   /**
    * Refresh all progress data
    */
   refreshData() {
-    this.loadProgressData();
-    this.updateChartsData();
+    try {
+      this.loadProgressData();
+      this.updateChartsData();
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    }
   }
 
   /**
@@ -648,36 +847,89 @@ class ProgressManager {
    * @returns {Object} Progress data object
    */
   exportProgressData() {
-    const meals = this.getMealsForPeriod();
-    const totalNutrition = MealManager.calculateTotalNutrition(meals);
-    const goals = ProfileManager.getGoals();
-    const profile = ProfileManager.getProfile();
+    try {
+      const meals = this.getMealsForPeriod();
+      const totalNutrition = MealManager.calculateTotalNutrition(meals);
+      const goals = ProfileManager.getGoals();
+      const profile = ProfileManager.getProfile();
 
-    return {
-      period: this.currentPeriod,
-      dateRange: {
-        start: DateUtils.formatDate(new Date(Date.now() - (this.currentPeriod - 1) * 24 * 60 * 60 * 1000)),
-        end: DateUtils.formatDate(new Date())
-      },
-      meals: meals.length,
-      nutrition: totalNutrition,
-      goals,
-      profile,
-      insights: this.analyzeNutritionData(),
-      exportDate: new Date().toISOString()
-    };
+      return {
+        period: this.currentPeriod,
+        dateRange: {
+          start: DateUtils.formatDate(new Date(Date.now() - (this.currentPeriod - 1) * 24 * 60 * 60 * 1000)),
+          end: DateUtils.formatDate(new Date())
+        },
+        meals: meals.length,
+        nutrition: totalNutrition,
+        goals,
+        profile,
+        insights: this.analyzeNutritionData(),
+        exportDate: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error exporting progress data:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Show user-friendly error message
+   * @param {string} message - Error message to display
+   */
+  showUserFriendlyError(message) {
+    try {
+      // Look for existing error container or create one
+      let errorContainer = document.getElementById('progress-error-container');
+      if (!errorContainer) {
+        errorContainer = document.createElement('div');
+        errorContainer.id = 'progress-error-container';
+        errorContainer.className = 'error-message';
+        errorContainer.style.cssText = `
+          background: #fee;
+          border: 1px solid #fcc;
+          color: #c33;
+          padding: 15px;
+          margin: 15px 0;
+          border-radius: 8px;
+          text-align: center;
+        `;
+        
+        // Insert at the top of the progress container
+        const progressContainer = document.querySelector('.progress-container') || 
+                                 document.querySelector('#progress-page') || 
+                                 document.body;
+        progressContainer.insertBefore(errorContainer, progressContainer.firstChild);
+      }
+      
+      errorContainer.textContent = message;
+      errorContainer.style.display = 'block';
+      
+      // Auto-hide after 10 seconds
+      setTimeout(() => {
+        errorContainer.style.display = 'none';
+      }, 10000);
+    } catch (error) {
+      console.error('Error showing user-friendly error:', error);
+    }
   }
 
   /**
    * Destroy charts when leaving page
    */
   destroy() {
-    Object.values(this.charts).forEach(chart => {
-      if (chart && typeof chart.destroy === 'function') {
-        chart.destroy();
+    try {
+      this.destroyCharts();
+      this.charts = {};
+      this.isInitialized = false;
+      this.eventListenersBound = false;
+      
+      // Remove global instance reference
+      if (window.progressManagerInstance === this) {
+        delete window.progressManagerInstance;
       }
-    });
-    this.charts = {};
+    } catch (error) {
+      console.error('Error destroying ProgressManager:', error);
+    }
   }
 }
 
@@ -693,10 +945,15 @@ class ProgressChartConfigs {
    * @returns {CanvasGradient} Gradient object
    */
   static createGradient(ctx, color) {
-    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, color + '40');
-    gradient.addColorStop(1, color + '10');
-    return gradient;
+    try {
+      const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+      gradient.addColorStop(0, color + '40');
+      gradient.addColorStop(1, color + '10');
+      return gradient;
+    } catch (error) {
+      console.error('Error creating gradient:', error);
+      return null;
+    }
   }
 
   /**
@@ -704,84 +961,89 @@ class ProgressChartConfigs {
    * @returns {Object} Chart options
    */
   static getEnhancedOptions() {
-    const colors = ChartUtils.getChartColors();
-    
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: {
-        intersect: false,
-        mode: 'index'
-      },
-      plugins: {
-        legend: {
-          labels: {
-            color: colors.text,
-            usePointStyle: true,
-            padding: 20,
-            font: {
-              size: 12,
-              weight: '500'
+    try {
+      const colors = ChartUtils.getChartColors();
+      
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        },
+        plugins: {
+          legend: {
+            labels: {
+              color: colors.text,
+              usePointStyle: true,
+              padding: 20,
+              font: {
+                size: 12,
+                weight: '500'
+              }
+            }
+          },
+          tooltip: {
+            backgroundColor: colors.background,
+            titleColor: colors.text,
+            bodyColor: colors.text,
+            borderColor: colors.primary,
+            borderWidth: 1,
+            cornerRadius: 8,
+            padding: 12,
+            titleFont: {
+              size: 14,
+              weight: '600'
+            },
+            bodyFont: {
+              size: 13
             }
           }
         },
-        tooltip: {
-          backgroundColor: colors.background,
-          titleColor: colors.text,
-          bodyColor: colors.text,
-          borderColor: colors.primary,
-          borderWidth: 1,
-          cornerRadius: 8,
-          padding: 12,
-          titleFont: {
-            size: 14,
-            weight: '600'
-          },
-          bodyFont: {
-            size: 13
-          }
-        }
-      },
-      scales: {
-        x: {
-          ticks: {
-            color: colors.text,
-            font: {
-              size: 11
+        scales: {
+          x: {
+            ticks: {
+              color: colors.text,
+              font: {
+                size: 11
+              }
+            },
+            grid: {
+              color: colors.grid,
+              drawOnChartArea: true,
+              drawTicks: false
             }
           },
-          grid: {
-            color: colors.grid,
-            drawOnChartArea: true,
-            drawTicks: false
-          }
-        },
-        y: {
-          ticks: {
-            color: colors.text,
-            font: {
-              size: 11
+          y: {
+            ticks: {
+              color: colors.text,
+              font: {
+                size: 11
+              }
+            },
+            grid: {
+              color: colors.grid,
+              drawOnChartArea: true,
+              drawTicks: false
             }
+          }
+        },
+        elements: {
+          point: {
+            radius: 4,
+            hoverRadius: 6,
+            borderWidth: 2
           },
-          grid: {
-            color: colors.grid,
-            drawOnChartArea: true,
-            drawTicks: false
+          line: {
+            borderWidth: 3,
+            tension: 0.4
           }
         }
-      },
-      elements: {
-        point: {
-          radius: 4,
-          hoverRadius: 6,
-          borderWidth: 2
-        },
-        line: {
-          borderWidth: 3,
-          tension: 0.4
-        }
-      }
-    };
+      };
+    } catch (error) {
+      console.error('Error getting enhanced chart options:', error);
+      return {};
+    }
   }
 }
 
@@ -794,37 +1056,43 @@ class ProgressAnalytics {
    * @returns {Object} Trend analysis
    */
   static calculateTrends(meals, days) {
-    if (meals.length === 0) return null;
+    try {
+      if (!Array.isArray(meals) || meals.length === 0) return null;
 
-    // Group meals by date
-    const mealsByDate = meals.reduce((groups, meal) => {
-      if (!groups[meal.date]) {
-        groups[meal.date] = [];
-      }
-      groups[meal.date].push(meal);
-      return groups;
-    }, {});
+      // Group meals by date
+      const mealsByDate = meals.reduce((groups, meal) => {
+        if (!meal || !meal.date) return groups;
+        if (!groups[meal.date]) {
+          groups[meal.date] = [];
+        }
+        groups[meal.date].push(meal);
+        return groups;
+      }, {});
 
-    // Calculate daily nutrition values
-    const dailyNutrition = Object.keys(mealsByDate).map(date => {
-      const dayMeals = mealsByDate[date];
-      return {
-        date,
-        ...MealManager.calculateTotalNutrition(dayMeals)
-      };
-    }).sort((a, b) => new Date(a.date) - new Date(b.date));
+      // Calculate daily nutrition values
+      const dailyNutrition = Object.keys(mealsByDate).map(date => {
+        const dayMeals = mealsByDate[date];
+        return {
+          date,
+          ...MealManager.calculateTotalNutrition(dayMeals)
+        };
+      }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    if (dailyNutrition.length < 2) return null;
+      if (dailyNutrition.length < 2) return null;
 
-    // Calculate trends (simple linear regression)
-    const trends = {};
-    ['calories', 'protein', 'carbs', 'fats'].forEach(nutrient => {
-      const values = dailyNutrition.map(day => day[nutrient]);
-      const trend = this.calculateLinearTrend(values);
-      trends[nutrient] = trend;
-    });
+      // Calculate trends (simple linear regression)
+      const trends = {};
+      ['calories', 'protein', 'carbs', 'fats'].forEach(nutrient => {
+        const values = dailyNutrition.map(day => day[nutrient]);
+        const trend = this.calculateLinearTrend(values);
+        trends[nutrient] = trend;
+      });
 
-    return trends;
+      return trends;
+    } catch (error) {
+      console.error('Error calculating trends:', error);
+      return null;
+    }
   }
 
   /**
@@ -833,22 +1101,27 @@ class ProgressAnalytics {
    * @returns {Object} Trend object with slope and direction
    */
   static calculateLinearTrend(values) {
-    if (values.length < 2) return { slope: 0, direction: 'stable' };
+    try {
+      if (!Array.isArray(values) || values.length < 2) return { slope: 0, direction: 'stable' };
 
-    const n = values.length;
-    const x = Array.from({ length: n }, (_, i) => i);
-    const sumX = x.reduce((a, b) => a + b, 0);
-    const sumY = values.reduce((a, b) => a + b, 0);
-    const sumXY = x.reduce((sum, xi, i) => sum + xi * values[i], 0);
-    const sumXX = x.reduce((sum, xi) => sum + xi * xi, 0);
+      const n = values.length;
+      const x = Array.from({ length: n }, (_, i) => i);
+      const sumX = x.reduce((a, b) => a + b, 0);
+      const sumY = values.reduce((a, b) => a + b, 0);
+      const sumXY = x.reduce((sum, xi, i) => sum + xi * values[i], 0);
+      const sumXX = x.reduce((sum, xi) => sum + xi * xi, 0);
 
-    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-    
-    let direction = 'stable';
-    if (slope > 0.1) direction = 'increasing';
-    else if (slope < -0.1) direction = 'decreasing';
+      const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+      
+      let direction = 'stable';
+      if (slope > 0.1) direction = 'increasing';
+      else if (slope < -0.1) direction = 'decreasing';
 
-    return { slope, direction };
+      return { slope, direction };
+    } catch (error) {
+      console.error('Error calculating linear trend:', error);
+      return { slope: 0, direction: 'stable' };
+    }
   }
 
   /**
@@ -857,55 +1130,60 @@ class ProgressAnalytics {
    * @returns {Object} Streak information
    */
   static calculateStreaks(meals) {
-    if (meals.length === 0) return { current: 0, longest: 0 };
+    try {
+      if (!Array.isArray(meals) || meals.length === 0) return { current: 0, longest: 0 };
 
-    const uniqueDates = this.getUniqueDates(meals).sort();
-    let currentStreak = 0;
-    let longestStreak = 0;
-    let tempStreak = 1;
+      const uniqueDates = this.getUniqueDates(meals).sort();
+      let currentStreak = 0;
+      let longestStreak = 0;
+      let tempStreak = 1;
 
-    const today = DateUtils.formatDate(new Date());
-    const yesterday = DateUtils.formatDate(new Date(Date.now() - 24 * 60 * 60 * 1000));
+      const today = DateUtils.formatDate(new Date());
+      const yesterday = DateUtils.formatDate(new Date(Date.now() - 24 * 60 * 60 * 1000));
 
-    // Check if today or yesterday has meals (for current streak)
-    if (uniqueDates.includes(today) || uniqueDates.includes(yesterday)) {
-      currentStreak = 1;
-      
-      // Count backwards from today/yesterday
-      let checkDate = uniqueDates.includes(today) ? today : yesterday;
-      let checkIndex = uniqueDates.indexOf(checkDate);
-      
-      while (checkIndex > 0) {
-        const prevDate = new Date(checkDate);
-        prevDate.setDate(prevDate.getDate() - 1);
-        const prevDateString = DateUtils.formatDate(prevDate);
+      // Check if today or yesterday has meals (for current streak)
+      if (uniqueDates.includes(today) || uniqueDates.includes(yesterday)) {
+        currentStreak = 1;
         
-        if (uniqueDates.includes(prevDateString)) {
-          currentStreak++;
-          checkDate = prevDateString;
-          checkIndex = uniqueDates.indexOf(checkDate);
-        } else {
-          break;
+        // Count backwards from today/yesterday
+        let checkDate = uniqueDates.includes(today) ? today : yesterday;
+        let checkIndex = uniqueDates.indexOf(checkDate);
+        
+        while (checkIndex > 0) {
+          const prevDate = new Date(checkDate);
+          prevDate.setDate(prevDate.getDate() - 1);
+          const prevDateString = DateUtils.formatDate(prevDate);
+          
+          if (uniqueDates.includes(prevDateString)) {
+            currentStreak++;
+            checkDate = prevDateString;
+            checkIndex = uniqueDates.indexOf(checkDate);
+          } else {
+            break;
+          }
         }
       }
-    }
 
-    // Calculate longest streak
-    for (let i = 1; i < uniqueDates.length; i++) {
-      const currentDate = new Date(uniqueDates[i]);
-      const prevDate = new Date(uniqueDates[i - 1]);
-      const dayDiff = (currentDate - prevDate) / (24 * 60 * 60 * 1000);
-      
-      if (dayDiff === 1) {
-        tempStreak++;
-      } else {
-        longestStreak = Math.max(longestStreak, tempStreak);
-        tempStreak = 1;
+      // Calculate longest streak
+      for (let i = 1; i < uniqueDates.length; i++) {
+        const currentDate = new Date(uniqueDates[i]);
+        const prevDate = new Date(uniqueDates[i - 1]);
+        const dayDiff = (currentDate - prevDate) / (24 * 60 * 60 * 1000);
+        
+        if (dayDiff === 1) {
+          tempStreak++;
+        } else {
+          longestStreak = Math.max(longestStreak, tempStreak);
+          tempStreak = 1;
+        }
       }
-    }
-    longestStreak = Math.max(longestStreak, tempStreak);
+      longestStreak = Math.max(longestStreak, tempStreak);
 
-    return { current: currentStreak, longest: longestStreak };
+      return { current: currentStreak, longest: longestStreak };
+    } catch (error) {
+      console.error('Error calculating streaks:', error);
+      return { current: 0, longest: 0 };
+    }
   }
 
   /**
@@ -914,7 +1192,13 @@ class ProgressAnalytics {
    * @returns {Array<string>} Unique dates
    */
   static getUniqueDates(meals) {
-    return [...new Set(meals.map(meal => meal.date))];
+    try {
+      if (!Array.isArray(meals)) return [];
+      return [...new Set(meals.map(meal => meal.date).filter(Boolean))];
+    } catch (error) {
+      console.error('Error getting unique dates:', error);
+      return [];
+    }
   }
 }
 
@@ -923,15 +1207,42 @@ class ProgressAnalytics {
 window.ProgressManager = ProgressManager;
 window.ProgressAnalytics = ProgressAnalytics;
 
-// Auto-initialize if we're on the progress page
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    if (window.location.pathname.includes('progress.html')) {
-      new ProgressManager();
+// Auto-initialize only once when DOM is ready
+let progressManagerInitialized = false;
+
+function initializeProgressManager() {
+  if (progressManagerInitialized) return;
+  
+  try {
+    if (window.location.pathname.includes('progress.html') || 
+        document.querySelector('#progress-page') !== null ||
+        document.querySelector('.progress-container') !== null) {
+      
+      // Check if dependencies are available
+      if (typeof Chart !== 'undefined' && 
+          typeof MealManager !== 'undefined' && 
+          typeof ProfileManager !== 'undefined' &&
+          typeof ChartUtils !== 'undefined' &&
+          typeof DateUtils !== 'undefined') {
+        
+        new ProgressManager();
+        progressManagerInitialized = true;
+      } else {
+        // Wait a bit more for dependencies to load
+        setTimeout(initializeProgressManager, 100);
+      }
     }
-  });
-} else {
-  if (window.location.pathname.includes('progress.html')) {
-    new ProgressManager();
+  } catch (error) {
+    console.error('Error in progress manager initialization:', error);
   }
 }
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeProgressManager);
+} else {
+  initializeProgressManager();
+}
+
+// Also try to initialize after a short delay to catch late-loading dependencies
+setTimeout(initializeProgressManager, 500);
