@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Meal Library - Browse and manage your saved meals for quick meal planning.">
+    <title>Meal Library - Nutrition & Meal Planner</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="brand-icon">🥗</span>
+                <span class="brand-text">NutriPlan</span>
+            </div>
+            
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link" aria-label="Home">Home</a>
+                <a href="dashboard.html" class="nav-link" aria-label="Dashboard">Dashboard</a>
+                <a href="meal-planner.html" class="nav-link" aria-label="Meal Planner">Meal Planner</a>
+                <a href="progress.html" class="nav-link" aria-label="Progress">Progress</a>
+                <a href="meal-library.html" class="nav-link active" aria-label="Meal Library">Meal Library</a>
+                <a href="profile.html" class="nav-link" aria-label="Profile">Profile</a>
+            </div>
+            
+            <div class="nav-controls">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1>Meal Library</h1>
+                <p>Your saved meals for quick planning</p>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="library-controls">
+                <div class="search-bar">
+                    <input type="text" id="meal-search" placeholder="Search meals..." 
+                           aria-label="Search meals">
+                    <button type="button" class="search-btn" aria-label="Search">🔍</button>
+                </div>
+                <div class="filter-controls">
+                    <select id="meal-type-filter" aria-label="Filter by meal type">
+                        <option value="">All Meal Types</option>
+                        <option value="breakfast">Breakfast</option>
+                        <option value="lunch">Lunch</option>
+                        <option value="dinner">Dinner</option>
+                        <option value="snack">Snack</option>
+                    </select>
+                    <select id="sort-by" aria-label="Sort meals">
+                        <option value="name">Sort by Name</option>
+                        <option value="calories">Sort by Calories</option>
+                        <option value="protein">Sort by Protein</option>
+                        <option value="date">Sort by Date Added</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Default Meals Info -->
+            <div class="info-banner" id="default-meals-banner">
+                <div class="info-content">
+                    <span class="info-icon">💡</span>
+                    <p>We've included some popular meals to get you started. Add your own meals from the Meal Planner!</p>
+                </div>
+            </div>
+
+            <!-- Meal Library Grid -->
+            <div class="library-grid" id="library-grid">
+                <!-- Meals will be populated by JavaScript -->
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="empty-state" style="display: none;">
+                <div class="empty-icon">🍽️</div>
+                <h3>No meals found</h3>
+                <p>Start building your meal library by adding meals from the planner.</p>
+                <a href="meal-planner.html" class="btn btn-primary">Add Your First Meal</a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Meal Detail Modal -->
+    <div class="modal" id="meal-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-meal-name">Meal Details</h3>
+                <button class="modal-close" id="modal-close" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Meal details will be populated by JavaScript -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="add-to-plan">Add to Plan</button>
+                <button class="btn btn-danger" id="delete-meal">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/meal-library.js"></script>
+</body>
+</html>

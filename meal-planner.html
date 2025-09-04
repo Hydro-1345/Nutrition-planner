@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Meal Planner - Add and plan your meals with detailed nutritional information.">
+    <title>Meal Planner - Nutrition & Meal Planner</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="brand-icon">🥗</span>
+                <span class="brand-text">NutriPlan</span>
+            </div>
+            
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link" aria-label="Home">Home</a>
+                <a href="dashboard.html" class="nav-link" aria-label="Dashboard">Dashboard</a>
+                <a href="meal-planner.html" class="nav-link active" aria-label="Meal Planner">Meal Planner</a>
+                <a href="progress.html" class="nav-link" aria-label="Progress">Progress</a>
+                <a href="meal-library.html" class="nav-link" aria-label="Meal Library">Meal Library</a>
+                <a href="profile.html" class="nav-link" aria-label="Profile">Profile</a>
+            </div>
+            
+            <div class="nav-controls">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1>Meal Planner</h1>
+                <p>Plan your meals and track nutrition</p>
+            </div>
+
+            <!-- Meal Form -->
+            <div class="form-section">
+                <div class="form-card">
+                    <h2>Add New Meal</h2>
+                    <form id="meal-form" class="meal-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="meal-date">Date</label>
+                                <input type="date" id="meal-date" name="date" required aria-describedby="date-help">
+                                <small id="date-help">Select the date for this meal</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="meal-type">Meal Type</label>
+                                <select id="meal-type" name="mealType" required aria-describedby="meal-type-help">
+                                    <option value="">Select meal type</option>
+                                    <option value="breakfast">Breakfast</option>
+                                    <option value="lunch">Lunch</option>
+                                    <option value="dinner">Dinner</option>
+                                    <option value="snack">Snack</option>
+                                </select>
+                                <small id="meal-type-help">Choose the type of meal</small>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="food-item">Food Item</label>
+                            <input type="text" id="food-item" name="foodItem" required 
+                                   placeholder="e.g., Grilled Chicken Breast" 
+                                   aria-describedby="food-item-help">
+                            <small id="food-item-help">Enter the name of the food or dish</small>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="calories">Calories</label>
+                                <input type="number" id="calories" name="calories" min="0" step="1" required
+                                       placeholder="0" aria-describedby="calories-help">
+                                <small id="calories-help">Total calories</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="serving-size">Serving Size</label>
+                                <input type="text" id="serving-size" name="servingSize" 
+                                       placeholder="e.g., 1 cup, 100g" aria-describedby="serving-help">
+                                <small id="serving-help">Optional serving size description</small>
+                            </div>
+                        </div>
+
+                        <div class="macros-section">
+                            <h3>Macronutrients</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="protein">Protein (g)</label>
+                                    <input type="number" id="protein" name="protein" min="0" step="0.1" required
+                                           placeholder="0" aria-describedby="protein-help">
+                                    <small id="protein-help">Protein in grams</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="carbs">Carbohydrates (g)</label>
+                                    <input type="number" id="carbs" name="carbs" min="0" step="0.1" required
+                                           placeholder="0" aria-describedby="carbs-help">
+                                    <small id="carbs-help">Carbs in grams</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="fats">Fats (g)</label>
+                                    <input type="number" id="fats" name="fats" min="0" step="0.1" required
+                                           placeholder="0" aria-describedby="fats-help">
+                                    <small id="fats-help">Fats in grams</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="save-to-library">
+                                Save to Library
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                Add Meal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Today's Meals -->
+            <div class="today-meals">
+                <div class="section-header">
+                    <h2>Today's Meals</h2>
+                    <div class="date-display" id="current-date"></div>
+                </div>
+                <div class="meals-grid" id="todays-meals">
+                    <!-- Today's meals will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Weekly Overview -->
+            <div class="weekly-overview">
+                <h2>This Week's Plan</h2>
+                <div class="week-grid" id="week-grid">
+                    <!-- Week grid will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script src="js/meal-planner.js"></script>
+</body>
+</html>

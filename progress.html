@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Progress Tracking - Monitor your nutrition trends and achieve your health goals.">
+    <title>Progress - Nutrition & Meal Planner</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="brand-icon">🥗</span>
+                <span class="brand-text">NutriPlan</span>
+            </div>
+            
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link" aria-label="Home">Home</a>
+                <a href="dashboard.html" class="nav-link" aria-label="Dashboard">Dashboard</a>
+                <a href="meal-planner.html" class="nav-link" aria-label="Meal Planner">Meal Planner</a>
+                <a href="progress.html" class="nav-link active" aria-label="Progress">Progress</a>
+                <a href="meal-library.html" class="nav-link" aria-label="Meal Library">Meal Library</a>
+                <a href="profile.html" class="nav-link" aria-label="Profile">Profile</a>
+            </div>
+            
+            <div class="nav-controls">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1>Progress Tracking</h1>
+                <p>Monitor your nutrition trends and goals</p>
+            </div>
+
+            <!-- Time Period Selector -->
+            <div class="period-selector">
+                <button class="period-btn active" data-period="7">7 Days</button>
+                <button class="period-btn" data-period="14">14 Days</button>
+                <button class="period-btn" data-period="30">30 Days</button>
+            </div>
+
+            <!-- Progress Stats -->
+            <div class="progress-stats">
+                <div class="progress-card">
+                    <h3>Daily Average</h3>
+                    <div class="progress-metrics">
+                        <div class="metric">
+                            <span class="metric-label">Calories</span>
+                            <span class="metric-value" id="avg-calories">0</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Protein</span>
+                            <span class="metric-value" id="avg-protein">0g</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Carbs</span>
+                            <span class="metric-value" id="avg-carbs">0g</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Fats</span>
+                            <span class="metric-value" id="avg-fats">0g</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="progress-card">
+                    <h3>Goal Progress</h3>
+                    <div class="goal-progress" id="goal-progress">
+                        <!-- Goal progress bars will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="progress-charts">
+                <div class="chart-card">
+                    <h3>Calories Trend</h3>
+                    <canvas id="calories-trend-chart"></canvas>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>Macros Breakdown</h3>
+                    <canvas id="macros-breakdown-chart"></canvas>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>Weekly Comparison</h3>
+                    <canvas id="weekly-comparison-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Insights -->
+            <div class="insights-section">
+                <h3>Insights & Recommendations</h3>
+                <div class="insights-grid" id="insights-grid">
+                    <!-- Insights will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script src="js/progress.js"></script>
+</body>
+</html>

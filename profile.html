@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Profile Settings - Manage your personal information and nutrition goals.">
+    <title>Profile - Nutrition & Meal Planner</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="brand-icon">🥗</span>
+                <span class="brand-text">NutriPlan</span>
+            </div>
+            
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link" aria-label="Home">Home</a>
+                <a href="dashboard.html" class="nav-link" aria-label="Dashboard">Dashboard</a>
+                <a href="meal-planner.html" class="nav-link" aria-label="Meal Planner">Meal Planner</a>
+                <a href="progress.html" class="nav-link" aria-label="Progress">Progress</a>
+                <a href="meal-library.html" class="nav-link" aria-label="Meal Library">Meal Library</a>
+                <a href="profile.html" class="nav-link active" aria-label="Profile">Profile</a>
+            </div>
+            
+            <div class="nav-controls">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1>Profile Settings</h1>
+                <p>Manage your personal information and goals</p>
+            </div>
+
+            <!-- Profile Form -->
+            <div class="profile-section">
+                <div class="form-card">
+                    <h2>Personal Information</h2>
+                    <form id="profile-form" class="profile-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="first-name">First Name</label>
+                                <input type="text" id="first-name" name="firstName" 
+                                       placeholder="Enter your first name" aria-describedby="first-name-help">
+                                <small id="first-name-help">Your first name for personalization</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="last-name">Last Name</label>
+                                <input type="text" id="last-name" name="lastName" 
+                                       placeholder="Enter your last name" aria-describedby="last-name-help">
+                                <small id="last-name-help">Your last name</small>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="age">Age</label>
+                                <input type="number" id="age" name="age" min="13" max="120" 
+                                       placeholder="25" aria-describedby="age-help">
+                                <small id="age-help">Your age in years</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="gender">Gender</label>
+                                <select id="gender" name="gender" aria-describedby="gender-help">
+                                    <option value="">Select gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <small id="gender-help">Used for calculating nutritional needs</small>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="height">Height (cm)</label>
+                                <input type="number" id="height" name="height" min="100" max="250" step="0.1"
+                                       placeholder="175" aria-describedby="height-help">
+                                <small id="height-help">Your height in centimeters</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="weight">Weight (kg)</label>
+                                <input type="number" id="weight" name="weight" min="30" max="300" step="0.1"
+                                       placeholder="70" aria-describedby="weight-help">
+                                <small id="weight-help">Your current weight in kilograms</small>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="activity-level">Activity Level</label>
+                            <select id="activity-level" name="activityLevel" aria-describedby="activity-help">
+                                <option value="">Select activity level</option>
+                                <option value="sedentary">Sedentary (little/no exercise)</option>
+                                <option value="light">Light (light exercise 1-3 days/week)</option>
+                                <option value="moderate">Moderate (moderate exercise 3-5 days/week)</option>
+                                <option value="active">Active (hard exercise 6-7 days/week)</option>
+                                <option value="very-active">Very Active (very hard exercise, physical job)</option>
+                            </select>
+                            <small id="activity-help">Used to calculate your daily calorie needs</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="goal">Primary Goal</label>
+                            <select id="goal" name="goal" aria-describedby="goal-help">
+                                <option value="">Select your goal</option>
+                                <option value="lose-weight">Lose Weight</option>
+                                <option value="maintain-weight">Maintain Weight</option>
+                                <option value="gain-weight">Gain Weight</option>
+                                <option value="build-muscle">Build Muscle</option>
+                                <option value="improve-performance">Improve Athletic Performance</option>
+                            </select>
+                            <small id="goal-help">Your primary fitness/nutrition goal</small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Nutrition Goals -->
+            <div class="goals-section">
+                <div class="form-card">
+                    <h2>Daily Nutrition Goals</h2>
+                    <form id="goals-form" class="goals-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="calorie-goal">Daily Calories</label>
+                                <input type="number" id="calorie-goal" name="calorieGoal" min="1000" max="5000"
+                                       placeholder="2000" aria-describedby="calorie-goal-help">
+                                <small id="calorie-goal-help">Your daily calorie target</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="protein-goal">Protein (g)</label>
+                                <input type="number" id="protein-goal" name="proteinGoal" min="0" step="0.1"
+                                       placeholder="150" aria-describedby="protein-goal-help">
+                                <small id="protein-goal-help">Daily protein target in grams</small>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="carbs-goal">Carbohydrates (g)</label>
+                                <input type="number" id="carbs-goal" name="carbsGoal" min="0" step="0.1"
+                                       placeholder="200" aria-describedby="carbs-goal-help">
+                                <small id="carbs-goal-help">Daily carbohydrate target in grams</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="fats-goal">Fats (g)</label>
+                                <input type="number" id="fats-goal" name="fatsGoal" min="0" step="0.1"
+                                       placeholder="80" aria-describedby="fats-goal-help">
+                                <small id="fats-goal-help">Daily fat target in grams</small>
+                            </div>
+                        </div>
+
+                        <div class="auto-calculate">
+                            <button type="button" class="btn btn-secondary" id="auto-calculate-btn">
+                                Auto-Calculate Goals
+                            </button>
+                            <small>Calculate goals based on your profile information</small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- BMI Calculator -->
+            <div class="bmi-section">
+                <div class="form-card">
+                    <h2>Health Metrics</h2>
+                    <div class="bmi-calculator">
+                        <div class="bmi-result">
+                            <div class="bmi-value">
+                                <span class="bmi-number" id="bmi-value">--</span>
+                                <span class="bmi-label">BMI</span>
+                            </div>
+                            <div class="bmi-category" id="bmi-category">
+                                Enter height and weight
+                            </div>
+                        </div>
+                        <div class="bmi-info">
+                            <h4>BMI Categories:</h4>
+                            <ul>
+                                <li><span class="bmi-range">Below 18.5:</span> Underweight</li>
+                                <li><span class="bmi-range">18.5-24.9:</span> Normal weight</li>
+                                <li><span class="bmi-range">25.0-29.9:</span> Overweight</li>
+                                <li><span class="bmi-range">30.0+:</span> Obese</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Actions -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="reset-profile">
+                    Reset to Defaults
+                </button>
+                <button type="button" class="btn btn-primary" id="save-profile">
+                    Save Profile
+                </button>
+            </div>
+
+            <!-- Success Message -->
+            <div class="success-message" id="success-message" style="display: none;">
+                <span class="success-icon">✅</span>
+                <span>Profile saved successfully!</span>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script src="js/profile.js"></script>
+</body>
+</html>
