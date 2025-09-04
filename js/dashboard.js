@@ -13,10 +13,47 @@ class DashboardManager {
    * Initialize dashboard functionality
    */
   init() {
-    this.loadDashboardData();
-    this.initializeCharts();
-    this.setupEventListeners();
-    this.refreshData();
+    try {
+      this.loadDashboardData();
+      this.initializeCharts();
+      this.setupEventListeners();
+      this.refreshData();
+    } catch (error) {
+      this.showErrorMessage('Oops! Something went wrong loading your dashboard. Please try again.');
+      console.error('Dashboard initialization error:', error);
+    }
+  }
+
+  /**
+   * Show error message to user
+   * @param {string} message - Error message to display
+   */
+  showErrorMessage(message) {
+    const dashboardContainer = document.querySelector('.dashboard-container') || document.body;
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.innerHTML = `
+      <div class="error-content">
+        <div class="error-icon">⚠️</div>
+        <h3>Dashboard Error</h3>
+        <p>${message}</p>
+        <button onclick="location.reload()" class="btn btn-primary">Try Again</button>
+      </div>
+    `;
+    errorDiv.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      text-align: center;
+      z-index: 1000;
+      max-width: 400px;
+    `;
+    dashboardContainer.appendChild(errorDiv);
   }
 
   /**
@@ -142,16 +179,26 @@ class DashboardManager {
    * Initialize Chart.js charts
    */
   initializeCharts() {
-    this.initializeWeeklyCaloriesChart();
-    this.initializeMacrosChart();
+    try {
+      this.renderWeeklyCaloriesChart();
+      this.renderMacrosChart();
+    } catch (error) {
+      this.showErrorMessage('Oops! Something went wrong loading your charts. Please try again.');
+      console.error('Chart initialization error:', error);
+    }
   }
 
   /**
-   * Initialize weekly calories chart
+   * Render weekly calories chart
    */
-  initializeWeeklyCaloriesChart() {
+  renderWeeklyCaloriesChart() {
     const ctx = document.getElementById('weekly-calories-chart');
     if (!ctx) return;
+
+    // Destroy existing chart if it exists
+    if (this.charts.weeklyCalories) {
+      this.charts.weeklyCalories.destroy();
+    }
 
     const colors = ChartUtils.getChartColors();
     const weekDates = DateUtils.getWeekDates();
@@ -215,11 +262,16 @@ class DashboardManager {
   }
 
   /**
-   * Initialize macros distribution chart
+   * Render macros distribution chart
    */
-  initializeMacrosChart() {
+  renderMacrosChart() {
     const ctx = document.getElementById('macros-chart');
     if (!ctx) return;
+
+    // Destroy existing chart if it exists
+    if (this.charts.macros) {
+      this.charts.macros.destroy();
+    }
 
     const colors = ChartUtils.getChartColors();
     const weekMeals = MealManager.getWeekMeals();
@@ -283,26 +335,30 @@ class DashboardManager {
    * @param {Object} totalNutrition - Total nutrition data
    */
   updateChartsData(weekMeals, totalNutrition) {
-    // Update weekly calories chart
-    if (this.charts.weeklyCalories) {
-      const weekDates = DateUtils.getWeekDates();
-      const dailyCalories = weekDates.map(date => {
-        const dayMeals = weekMeals.filter(meal => meal.date === date);
-        return MealManager.calculateTotalNutrition(dayMeals).calories;
-      });
+    try {
+      // Update weekly calories chart
+      if (this.charts.weeklyCalories) {
+        const weekDates = DateUtils.getWeekDates();
+        const dailyCalories = weekDates.map(date => {
+          const dayMeals = weekMeals.filter(meal => meal.date === date);
+          return MealManager.calculateTotalNutrition(dayMeals).calories;
+        });
 
-      this.charts.weeklyCalories.data.datasets[0].data = dailyCalories;
-      this.charts.weeklyCalories.update('active');
-    }
+        this.charts.weeklyCalories.data.datasets[0].data = dailyCalories;
+        this.charts.weeklyCalories.update('active');
+      }
 
-    // Update macros chart
-    if (this.charts.macros) {
-      const proteinCalories = totalNutrition.protein * 4;
-      const carbsCalories = totalNutrition.carbs * 4;
-      const fatsCalories = totalNutrition.fats * 9;
+      // Update macros chart
+      if (this.charts.macros) {
+        const proteinCalories = totalNutrition.protein * 4;
+        const carbsCalories = totalNutrition.carbs * 4;
+        const fatsCalories = totalNutrition.fats * 9;
 
-      this.charts.macros.data.datasets[0].data = [proteinCalories, carbsCalories, fatsCalories];
-      this.charts.macros.update('active');
+        this.charts.macros.data.datasets[0].data = [proteinCalories, carbsCalories, fatsCalories];
+        this.charts.macros.update('active');
+      }
+    } catch (error) {
+      console.error('Error updating charts:', error);
     }
   }
 
@@ -310,7 +366,11 @@ class DashboardManager {
    * Refresh all dashboard data
    */
   refreshData() {
-    this.loadDashboardData();
+    try {
+      this.loadDashboardData();
+    } catch (error) {
+      console.error('Error refreshing dashboard data:', error);
+    }
   }
 
   /**
@@ -319,7 +379,11 @@ class DashboardManager {
   destroy() {
     Object.values(this.charts).forEach(chart => {
       if (chart && typeof chart.destroy === 'function') {
-        chart.destroy();
+        try {
+          chart.destroy();
+        } catch (error) {
+          console.error('Error destroying chart:', error);
+        }
       }
     });
     this.charts = {};
