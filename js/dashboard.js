@@ -6,6 +6,7 @@
 class DashboardManager {
   constructor() {
     this.charts = {};
+    this.userData = {};
     this.init();
   }
 
@@ -14,6 +15,7 @@ class DashboardManager {
    */
   init() {
     try {
+      this.loadUserData();
       this.loadDashboardData();
       this.initializeCharts();
       this.setupEventListeners();
@@ -69,6 +71,164 @@ class DashboardManager {
         this.refreshData();
       }
     });
+  }
+
+  /**
+   * Load user data from localStorage
+   */
+  loadUserData() {
+    try {
+      this.userData = {
+        height: parseFloat(localStorage.getItem('userHeight')) || 0,
+        weight: parseFloat(localStorage.getItem('userWeight')) || 0,
+        age: parseInt(localStorage.getItem('userAge')) || 0,
+        gender: localStorage.getItem('userGender') || 'not-specified',
+        activityLevel: localStorage.getItem('userActivityLevel') || 'moderate',
+        goal: localStorage.getItem('userGoal') || 'maintain'
+      };
+      
+      // Calculate derived metrics
+      this.userData.bmi = this.calculateBMI();
+      this.userData.bmiCategory = this.getBMICategory();
+      this.userData.bmr = this.calculateBMR();
+      this.userData.tdee = this.calculateTDEE();
+      
+      this.updateUserMetrics();
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  }
+
+  /**
+   * Calculate BMI
+   * @returns {number} BMI value
+   */
+  calculateBMI() {
+    if (this.userData.height <= 0 || this.userData.weight <= 0) return 0;
+    
+    // Convert height from cm to meters
+    const heightInMeters = this.userData.height / 100;
+    return this.userData.weight / (heightInMeters * heightInMeters);
+  }
+
+  /**
+   * Get BMI category
+   * @returns {string} BMI category
+   */
+  getBMICategory() {
+    const bmi = this.userData.bmi;
+    if (bmi === 0) return 'Not available';
+    if (bmi < 18.5) return 'Underweight';
+    if (bmi < 25) return 'Normal weight';
+    if (bmi < 30) return 'Overweight';
+    return 'Obese';
+  }
+
+  /**
+   * Calculate Basal Metabolic Rate (BMR) using Mifflin-St Jeor Equation
+   * @returns {number} BMR in calories
+   */
+  calculateBMR() {
+    if (this.userData.weight <= 0 || this.userData.height <= 0 || this.userData.age <= 0) return 0;
+    
+    let bmr = 10 * this.userData.weight + 6.25 * this.userData.height - 5 * this.userData.age;
+    
+    if (this.userData.gender === 'male') {
+      bmr += 5;
+    } else if (this.userData.gender === 'female') {
+      bmr -= 161;
+    }
+    
+    return Math.round(bmr);
+  }
+
+  /**
+   * Calculate Total Daily Energy Expenditure (TDEE)
+   * @returns {number} TDEE in calories
+   */
+  calculateTDEE() {
+    const bmr = this.userData.bmr;
+    if (bmr === 0) return 0;
+    
+    const activityMultipliers = {
+      'sedentary': 1.2,
+      'light': 1.375,
+      'moderate': 1.55,
+      'active': 1.725,
+      'very-active': 1.9
+    };
+    
+    const multiplier = activityMultipliers[this.userData.activityLevel] || 1.55;
+    return Math.round(bmr * multiplier);
+  }
+
+  /**
+   * Update user metrics display
+   */
+  updateUserMetrics() {
+    // Update BMI display
+    this.updateMetricDisplay('bmi-value', this.userData.bmi > 0 ? this.userData.bmi.toFixed(1) : 'N/A');
+    this.updateMetricDisplay('bmi-category', this.userData.bmiCategory);
+    
+    // Update BMR display
+    this.updateMetricDisplay('bmr-value', this.userData.bmr > 0 ? this.userData.bmr + ' cal' : 'N/A');
+    
+    // Update TDEE display
+    this.updateMetricDisplay('tdee-value', this.userData.tdee > 0 ? this.userData.tdee + ' cal' : 'N/A');
+    
+    // Update user info display
+    this.updateMetricDisplay('user-height', this.userData.height > 0 ? this.userData.height + ' cm' : 'Not set');
+    this.updateMetricDisplay('user-weight', this.userData.weight > 0 ? this.userData.weight + ' kg' : 'Not set');
+    this.updateMetricDisplay('user-age', this.userData.age > 0 ? this.userData.age + ' years' : 'Not set');
+    
+    // Update BMI color coding
+    this.updateBMIColor();
+  }
+
+  /**
+   * Update individual metric display
+   * @param {string} elementId - Element ID
+   * @param {string} value - Value to display
+   */
+  updateMetricDisplay(elementId, value) {
+    const element = document.getElementById(elementId);
+    if (element) {
+      element.textContent = value;
+      
+      // Add animation for value change
+      element.style.transform = 'scale(1.05)';
+      setTimeout(() => {
+        element.style.transform = 'scale(1)';
+      }, 200);
+    }
+  }
+
+  /**
+   * Update BMI color coding based on category
+   */
+  updateBMIColor() {
+    const bmiElement = document.getElementById('bmi-value');
+    const categoryElement = document.getElementById('bmi-category');
+    
+    if (!bmiElement || !categoryElement) return;
+    
+    const bmi = this.userData.bmi;
+    let color = '#6c757d'; // Default gray
+    
+    if (bmi > 0) {
+      if (bmi < 18.5) {
+        color = '#17a2b8'; // Blue for underweight
+      } else if (bmi < 25) {
+        color = '#28a745'; // Green for normal
+      } else if (bmi < 30) {
+        color = '#ffc107'; // Yellow for overweight
+      } else {
+        color = '#dc3545'; // Red for obese
+      }
+    }
+    
+    bmiElement.style.color = color;
+    categoryElement.style.color = color;
   }
 
   /**

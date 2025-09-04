@@ -53,10 +53,15 @@ class ProfilePageManager {
       goalsForm.addEventListener('input', () => this.handleGoalsChange());
     }
 
-    // Save profile button
+    // Save profile button - CRITICAL: Ensure click listener is properly set up
     const saveBtn = document.getElementById('save-profile');
     if (saveBtn) {
-      saveBtn.addEventListener('click', () => this.saveProfile());
+      saveBtn.addEventListener('click', (e) => {
+        e.preventDefault(); // Prevent form submission if button is in a form
+        this.saveProfile();
+      });
+    } else {
+      console.error('Save profile button not found!');
     }
 
     // Reset profile button
@@ -97,21 +102,32 @@ class ProfilePageManager {
   }
 
   /**
-   * Save profile and goals
+   * Save profile and goals - CRITICAL: Main save functionality
    */
   saveProfile() {
+    console.log('Save profile triggered'); // Debug log
+    
     const profileForm = document.getElementById('profile-form');
     const goalsForm = document.getElementById('goals-form');
     
-    if (!profileForm || !goalsForm) return;
+    if (!profileForm || !goalsForm) {
+      console.error('Profile or goals form not found!');
+      alert('Error: Forms not found. Please refresh the page.');
+      return;
+    }
 
-    const profileData = FormUtils.getFormData(profileForm);
-    const goalsData = FormUtils.getFormData(goalsForm);
+    // CRITICAL: Retrieve ALL input fields from forms
+    const profileData = this.getAllFormData(profileForm);
+    const goalsData = this.getAllFormData(goalsForm);
+
+    console.log('Profile data retrieved:', profileData); // Debug log
+    console.log('Goals data retrieved:', goalsData); // Debug log
 
     // Validate profile data
     const profileValidation = this.validateProfileData(profileData);
     if (!profileValidation.isValid) {
       FormUtils.showErrors(profileForm, profileValidation.errors);
+      alert('Please fix the following errors:\n' + profileValidation.errors.join('\n'));
       return;
     }
 
@@ -119,22 +135,129 @@ class ProfilePageManager {
     const goalsValidation = this.validateGoalsData(goalsData);
     if (!goalsValidation.isValid) {
       FormUtils.showErrors(goalsForm, goalsValidation.errors);
+      alert('Please fix the following errors:\n' + goalsValidation.errors.join('\n'));
       return;
     }
 
-    // Save data
+    // Calculate and save BMI data
+    this.calculateAndSaveBMI(profileData);
+
+    // CRITICAL: Save data to localStorage
     const profileSuccess = ProfileManager.saveProfile(profileData);
     const goalsSuccess = ProfileManager.saveGoals(goalsData);
 
     if (profileSuccess && goalsSuccess) {
-      NotificationManager.showSuccess('Profile saved successfully!');
+      // CRITICAL: Show confirmation alert
+      alert('Profile saved successfully!');
+      
+      // Also show notification if available
+      if (typeof NotificationManager !== 'undefined') {
+        NotificationManager.showSuccess('Profile saved successfully!');
+      }
+      
       this.showSuccessMessage();
       
       // Trigger data refresh for other pages
       document.dispatchEvent(new CustomEvent('dataRefresh'));
+      
+      // Update BMI display on dashboard if available
+      this.updateDashboardBMI();
     } else {
-      NotificationManager.showError('Failed to save profile. Please try again.');
+      alert('Failed to save profile. Please try again.');
+      if (typeof NotificationManager !== 'undefined') {
+        NotificationManager.showError('Failed to save profile. Please try again.');
+      }
     }
+  }
+
+  /**
+   * CRITICAL: Get ALL form data from input fields
+   * @param {HTMLElement} form - The form element
+   * @returns {Object} Form data object
+   */
+  getAllFormData(form) {
+    const formData = {};
+    
+    // Get all input elements
+    const inputs = form.querySelectorAll('input, select, textarea');
+    
+    inputs.forEach(input => {
+      const name = input.name || input.id;
+      if (name) {
+        if (input.type === 'checkbox') {
+          formData[name] = input.checked;
+        } else if (input.type === 'radio') {
+          if (input.checked) {
+            formData[name] = input.value;
+          }
+        } else {
+          formData[name] = input.value;
+        }
+      }
+    });
+    
+    return formData;
+  }
+
+  /**
+   * Calculate and save BMI to localStorage
+   * @param {Object} profileData - Profile data containing height and weight
+   */
+  calculateAndSaveBMI(profileData) {
+    const height = parseFloat(profileData.height);
+    const weight = parseFloat(profileData.weight);
+
+    if (height && weight) {
+      const bmi = ProfileManager.calculateBMI(height, weight);
+      const bmiCategory = ProfileManager.getBMICategory(bmi);
+      
+      // Save BMI data to localStorage
+      const bmiData = {
+        value: bmi,
+        category: bmiCategory,
+        height: height,
+        weight: weight,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      localStorage.setItem('userBMI', JSON.stringify(bmiData));
+      console.log('BMI data saved to localStorage:', bmiData); // Debug log
+    }
+  }
+
+  /**
+   * Update BMI display on dashboard
+   */
+  updateDashboardBMI() {
+    const bmiData = this.getBMIData();
+    if (!bmiData) return;
+
+    // Update dashboard BMI elements if they exist
+    const dashboardBMIValue = document.getElementById('dashboard-bmi-value');
+    const dashboardBMICategory = document.getElementById('dashboard-bmi-category');
+    
+    if (dashboardBMIValue) {
+      dashboardBMIValue.textContent = bmiData.value.toFixed(1);
+    }
+    
+    if (dashboardBMICategory) {
+      dashboardBMICategory.textContent = bmiData.category;
+      dashboardBMICategory.className = `bmi-category ${this.getBMICategoryClass(bmiData.value)}`;
+    }
+
+    // Dispatch custom event for other components to listen to
+    document.dispatchEvent(new CustomEvent('bmiUpdated', {
+      detail: bmiData
+    }));
+  }
+
+  /**
+   * Get BMI data from localStorage
+   * @returns {Object|null} BMI data object or null if not found
+   */
+  getBMIData() {
+    const bmiData = localStorage.getItem('userBMI');
+    return bmiData ? JSON.parse(bmiData) : null;
   }
 
   /**
@@ -156,6 +279,10 @@ class ProfilePageManager {
       }
 
       this.calculateBMI();
+      
+      // Clear BMI data from localStorage
+      localStorage.removeItem('userBMI');
+      
       NotificationManager.showInfo('Profile reset to defaults');
     }
   }
@@ -372,8 +499,13 @@ class ProfilePageManager {
       dailyCalorieNeeds: null
     };
 
-    // Calculate BMI if height and weight available
-    if (profile.height && profile.weight) {
+    // Get BMI from localStorage if available
+    const bmiData = this.getBMIData();
+    if (bmiData) {
+      summary.bmi = bmiData.value;
+      summary.bmiCategory = bmiData.category;
+    } else if (profile.height && profile.weight) {
+      // Fallback to calculating from profile data
       summary.bmi = ProfileManager.calculateBMI(profile.height, profile.weight);
       summary.bmiCategory = ProfileManager.getBMICategory(summary.bmi);
     }
@@ -469,6 +601,46 @@ class ProfileUtils {
       min: Math.round(minWeight * 10) / 10,
       max: Math.round(maxWeight * 10) / 10
     };
+  }
+
+  /**
+   * Load and display BMI on dashboard
+   * @param {string} bmiValueId - ID of BMI value element
+   * @param {string} bmiCategoryId - ID of BMI category element
+   */
+  static loadDashboardBMI(bmiValueId = 'dashboard-bmi-value', bmiCategoryId = 'dashboard-bmi-category') {
+    const bmiData = localStorage.getItem('userBMI');
+    if (!bmiData) return;
+
+    try {
+      const bmi = JSON.parse(bmiData);
+      
+      const bmiValueElement = document.getElementById(bmiValueId);
+      const bmiCategoryElement = document.getElementById(bmiCategoryId);
+      
+      if (bmiValueElement) {
+        bmiValueElement.textContent = bmi.value.toFixed(1);
+      }
+      
+      if (bmiCategoryElement) {
+        bmiCategoryElement.textContent = bmi.category;
+        bmiCategoryElement.className = `bmi-category ${this.getBMICategoryClass(bmi.value)}`;
+      }
+    } catch (error) {
+      console.error('Error loading BMI data:', error);
+    }
+  }
+
+  /**
+   * Get CSS class for BMI category
+   * @param {number} bmi - BMI value
+   * @returns {string} CSS class name
+   */
+  static getBMICategoryClass(bmi) {
+    if (bmi < 18.5) return 'underweight';
+    if (bmi < 25) return 'normal';
+    if (bmi < 30) return 'overweight';
+    return 'obese';
   }
 }
 
